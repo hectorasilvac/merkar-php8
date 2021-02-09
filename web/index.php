@@ -1,25 +1,19 @@
 <?php
 
-require('../vendor/autoload.php');
+try {
 
-$app = new Silex\Application();
-$app['debug'] = true;
+  include __DIR__ . '/../includes/autoload.php';
 
-// Register the monolog logging service
-$app->register(new Silex\Provider\MonologServiceProvider(), array(
-  'monolog.logfile' => 'php://stderr',
-));
+  $route = ltrim(strtok($_SERVER['REQUEST_URI'], '?'), '/');
 
-// Register view rendering
-$app->register(new Silex\Provider\TwigServiceProvider(), array(
-    'twig.path' => __DIR__.'/views',
-));
+  $entryPoint = new \Ninja\EntryPoint($route, $_SERVER['REQUEST_METHOD'], new \Ijdb\IjdbRoutes());
 
-// Our web handlers
+  $entryPoint->run();
 
-$app->get('/', function() use($app) {
-  $app['monolog']->addDebug('logging output.');
-  return $app['twig']->render('index.twig');
-});
 
-$app->run();
+} catch (PDOException $e) {
+  $title = 'An error has occurred';
+  $output = 'Database error: ' . $e->getMessage() . '
+  in ' . $e->getFile() . ':' . $e->getLine();
+  include __DIR__ . '/../templates/layout.html.php';
+}
